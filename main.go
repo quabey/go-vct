@@ -368,27 +368,32 @@ func parseDurationFromNow(durationStr string) (int64, error) {
 		return 0, fmt.Errorf("invalid format, expected 'HHh MMm'")
 	}
 
-	// Parse hours
-	hours, err := strconv.Atoi(strings.TrimSuffix(parts[0], "h"))
-	if err != nil {
-		return 0, fmt.Errorf("invalid hour format: %v", err)
+	minutes := 0
+
+	for _, part := range parts {
+		if strings.Contains(part, "h") {
+			hours, err := strconv.Atoi(strings.TrimSuffix(part, "h"))
+			if err != nil {
+				return 0, err
+			}
+			minutes += hours * 60
+		}
+		if strings.Contains(part, "m") {
+			min, err := strconv.Atoi(strings.TrimSuffix(part, "m"))
+			if err != nil {
+				return 0, err
+			}
+			minutes += min
+		}
+		if strings.Contains(part, "d") {
+			days, err := strconv.Atoi(strings.TrimSuffix(part, "m"))
+			if err != nil {
+				return 0, err
+			}
+			minutes += days * 24 * 60
+		}
 	}
-
-	// Parse minutes
-	minutes, err := strconv.Atoi(strings.TrimSuffix(parts[1], "m"))
-	if err != nil {
-		return 0, fmt.Errorf("invalid minute format: %v", err)
-	}
-
-	// Get the current time
-	now := time.Now()
-
-	// Calculate the future time by adding the parsed duration and ensure that its on the hour
-	futureTime := now.Add(time.Hour*time.Duration(hours) + time.Minute*time.Duration(minutes))
-	futureTime = futureTime.Truncate(time.Hour)
-
-	// Return the Unix timestamp of the future time
-	return futureTime.Unix(), nil
+	return time.Now().Add(time.Duration(minutes) * time.Minute).Unix(), nil
 }
 
 func getRegion(tournament string) (region string) {

@@ -1,3 +1,14 @@
+# Go VCT 
+
+Sends automated messages with Valorant Champions Tournament Updates to a discord webhook.
+
+Updates Inculde 
+- Upcoming matches
+- Starting matches
+- Ending machtes
+
+Also theres a selection of offical streams and watch parties. 
+
 ## How to use
 
 - Install docker if you havent already

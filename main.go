@@ -117,6 +117,13 @@ func main() {
 func getUpcoming() {
 	fmt.Println("Fetching upcoming matches...")
 	data := fetchData("https://vlr.orlandomm.net/api/v1/matches")
+	filter := []MatchDetail{}
+	for _, match := range data.Data {
+		if checkVCT(match.Tournament){
+			filter = append(filter, match)
+		}
+	}
+	data.Data = filter
 	updateUpcomingMatches(data)
 	checkGameStart(data)
 }
@@ -143,7 +150,7 @@ func checkGameStart(currentUpcoming MatchData) {
 
 func checkAndSendResults() {
 	results := fetchData("https://vlr.orlandomm.net/api/v1/results?page=1")
-	if results.Data[0].ID != lastResultId {
+	if results.Data[0].ID != lastResultId && checkVCT(results.Data[0].Tournament)  {
 		fmt.Println("New result found!")
 		lastResultId = results.Data[0].ID
 		sendResultsToDiscord(results)
@@ -338,6 +345,10 @@ func sendResultsToDiscord(results MatchData) {
 	sendToDiscord(webhookURL, messageBytes)
 }
 
+func checkVCT(tournament string) bool {
+	return strings.Contains(tournament, "Champions")
+}
+
 func getTwitchLink(region string) string {
 	return twitchLinks[region]
 }
@@ -348,10 +359,6 @@ func getYoutubeLink(region string) string {
 
 func getWatchParties(region string) map[string]string {
 	return watchParties[region]
-}
-
-func getWatchPartyLink(region, streamer string) string {
-	return watchParties[region][streamer]
 }
 
 func parseDurationFromNow(durationStr string) (int64, error) {

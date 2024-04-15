@@ -1,0 +1,9 @@
+version: "3"
+services:
+  go-vct:
+    build: .
+    env_file:
+      - .env
+      - .env.docker
+    volumes:
+      - ./sqlite:/app/sqlite

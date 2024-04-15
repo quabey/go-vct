@@ -5,6 +5,6 @@ import (
 )
 
 func TestTimestamp(t *testing.T) {
-	parseDurationFromNow("1h 15m")
-	parseDurationFromNow("d")
+	ParseDurationFromNow("1h 15m")
+	ParseDurationFromNow("d")
 }

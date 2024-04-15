@@ -16,7 +16,7 @@ COPY . ./
 
 # Build the binary.
 # -o myapp specifies the output name of the binary.
-RUN CGO_ENABLED=0 GOOS=linux go build -v -o myapp
+RUN GOOS=linux go build -v -ldflags='-s -w -extldflags "-static"' -o myapp
 
 # Use a Docker multi-stage build to create a lean production image.
 # https://docs.docker.com/develop/develop-images/multistage-build/

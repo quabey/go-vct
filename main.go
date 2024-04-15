@@ -2,15 +2,19 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type MatchData struct {
@@ -38,69 +42,46 @@ type Team struct {
 	Won     bool   `json:"won,omitempty"`
 }
 
+type Message struct {
+	Id               int
+	MessageId        string
+	MatchId          string
+	AnnouncementSent bool
+	StartingSent     bool
+	ResultSent       bool
+}
+
 var (
 	webhookURL          string
 	runningMatchId      string
 	lastResultId        string
 	lastUpcomingMatchId string
-
-	twitchLinks = map[string]string{
-		"Americas": "https://www.twitch.tv/valorant_americas",
-		"China":    "https://www.twitch.tv/valorantesports_cn",
-		"EMEA":     "https://www.twitch.tv/valorant_emea",
-		"Pacific":  "https://www.twitch.tv/valorant_pacific",
-	}
-
-	youtubeLinks = map[string]string{
-		"Americas": "https://www.youtube.com/@valorant_americas/live",
-		"China":    "https://www.youtube.com/@VALORANTEsportsCN/live",
-		"EMEA":     "https://www.youtube.com/@VALORANTEsportsEMEA/live",
-		"Pacific":  "https://www.youtube.com/@VCTPacific/live",
-	}
+	dbPath              string
 
 	roles = map[string]string{
-		"Americas": "1227214059498115072",
-		"China":    "1227214116834382009",
-		"EMEA":     "1227214030616264734",
-		"Pacific":  "1227213846268346440",
+	"Americas": "1227214059498115072",
+	"China":    "1227214116834382009",
+	"EMEA":     "1227214030616264734",
+	"Pacific":  "1227213846268346440",
 	}
 
-	watchParties = map[string]map[string]string{
-		"Pacific": {
-			"FNS":                  "https://www.twitch.tv/gofns",
-			"Sliggy":               "https://www.twitch.tv/sliggytv",
-			"Sgares":               "https://www.twitch.tv/sgares",
-			"ThinkingMansValorant": "https://www.twitch.tv/thinkingmansvalorant",
-			"tarik":                "https://www.twitch.tv/tarik",
-			"kyedae":               "https://www.twitch.tv/kyedae",
-		},
-		"EMEA": {
-			"FNS":                  "https://www.twitch.tv/gofns",
-			"Sliggy":               "https://www.twitch.tv/sliggytv",
-			"Sgares":               "https://www.twitch.tv/sgares",
-			"ThinkingMansValorant": "https://www.twitch.tv/thinkingmansvalorant",
-			"tarik":                "https://www.twitch.tv/tarik",
-			"kyedae":               "https://www.twitch.tv/kyedae",
-		},
-		"China": {
-			"Ryancentral": "https://www.twitch.tv/ryancentral",
-			"Yinsu":       "https://www.twitch.tv/yinsu",
-		},
-		"Americas": {
-			"FNS":                  "https://www.twitch.tv/gofns",
-			"Sliggy":               "https://www.twitch.tv/sliggytv",
-			"Sgares":               "https://www.twitch.tv/sgares",
-			"ThinkingMansValorant": "https://www.twitch.tv/thinkingmansvalorant",
-			"tarik":                "https://www.twitch.tv/tarik",
-			"kyedae":               "https://www.twitch.tv/kyedae",
-		},
-	}
 )
 
 func main() {
 	fmt.Println("Starting...")
 	godotenv.Load()
 	webhookURL = os.Getenv("WEBHOOK_URL")
+	dbPath = os.Getenv("SQLITE_DB")
+
+	messages, err := getSentMessages()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, message := range messages {
+		fmt.Println(message)
+	}
+
 	interval := 1 * time.Minute
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -118,7 +99,7 @@ func getUpcoming() {
 	data := fetchData("https://vlr.orlandomm.net/api/v1/matches")
 	filter := []MatchDetail{}
 	for _, match := range data.Data {
-		if checkVCT(match.Tournament) {
+		if CheckVCT(match.Tournament) {
 			filter = append(filter, match)
 		}
 	}
@@ -149,7 +130,7 @@ func checkGameStart(currentUpcoming MatchData) {
 
 func checkAndSendResults() {
 	results := fetchData("https://vlr.orlandomm.net/api/v1/results?page=1")
-	if results.Data[0].ID != lastResultId && checkVCT(results.Data[0].Tournament) {
+	if results.Data[0].ID != lastResultId && CheckVCT(results.Data[0].Tournament) {
 		fmt.Println("New result found!")
 		lastResultId = results.Data[0].ID
 		sendResultsToDiscord(results)
@@ -175,28 +156,45 @@ func fetchData(url string) MatchData {
 	return data
 }
 
-func sendToDiscord(url string, payload []byte) {
+func sendToDiscord(url string, payload []byte) int {
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(payload))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
-		return
+		return 5
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	// Send the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error sending message:", err)
-		return
+		return 4
 	}
 	defer resp.Body.Close()
 
-	// Check the response
+	responseBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response:", err)
+		return 2
+	}
+	var responseData map[string]interface{}
+	json.Unmarshal(responseBytes, &responseData)
+
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		responseBytes, _ := io.ReadAll(resp.Body)
 		fmt.Printf("Failed to send message, status code: %d, response: %s\n", resp.StatusCode, string(responseBytes))
 	}
+
+	if id, exists := responseData["id"].(string); exists {
+		intId, err := strconv.Atoi(id)
+		if err != nil {
+			fmt.Println("Error converting ID to int:", err)
+			return 3
+		}
+		log.Printf("Message sent with ID: %d\n", intId)
+		return intId
+	}
+
+	return 6
 }
 
 func sendUpcomingToDiscord(matches MatchData) {
@@ -206,10 +204,10 @@ func sendUpcomingToDiscord(matches MatchData) {
 
 	embeds := make([]map[string]interface{}, len(matches.Data))
 	for i, match := range matches.Data {
-		region := getRegion(match.Tournament)
+		region := GetRegion(match.Tournament)
 		title := "Live Match"
 		if match.In != "" {
-			timestamp, err := parseDurationFromNow(match.In)
+			timestamp, err := ParseDurationFromNow(match.In)
 			if err != nil {
 				fmt.Println("Error parsing duration:", err)
 				continue
@@ -229,12 +227,12 @@ func sendUpcomingToDiscord(matches MatchData) {
 				{
 					"name": "Riot Streams",
 					"value": fmt.Sprintf("[Twitch](%s)\n[YouTube](%s)",
-						getTwitchLink(region), getYoutubeLink(region)),
+						GetTwitchLink(region), GetYoutubeLink(region)),
 					"inline": true,
 				},
 				{
 					"name":   "Watch Parties",
-					"value":  buildWatchPartyLinks(getWatchParties(region)),
+					"value":  buildWatchPartyLinks(GetWatchParties(region)),
 					"inline": true,
 				},
 			},
@@ -252,7 +250,11 @@ func sendUpcomingToDiscord(matches MatchData) {
 		return
 	}
 
-	sendToDiscord(webhookURL, messageBytes)
+	messageId := sendToDiscord(webhookURL, messageBytes)
+	for _, match := range matches.Data {
+		intMatchId, _ := strconv.Atoi(match.ID)
+		addSentMessage(intMatchId, messageId)
+	}
 }
 
 func buildWatchPartyLinks(parties map[string]string) string {
@@ -267,7 +269,7 @@ func buildWatchPartyLinks(parties map[string]string) string {
 }
 
 func sendMatchStartToDiscord(match MatchDetail) {
-	region := getRegion(match.Tournament)
+	region := GetRegion(match.Tournament)
 	title := fmt.Sprintf("Match Start: **%s** vs **%s**", match.Teams[0].Name, match.Teams[1].Name)
 	embed := map[string]interface{}{
 		"type":        "rich",
@@ -281,12 +283,12 @@ func sendMatchStartToDiscord(match MatchDetail) {
 			{
 				"name": "Riot Streams",
 				"value": fmt.Sprintf("[Twitch](%s)\n[YouTube](%s)",
-					getTwitchLink(region), getYoutubeLink(region)),
+					GetTwitchLink(region), GetYoutubeLink(region)),
 				"inline": true,
 			},
 			{
 				"name":   "Watch Parties",
-				"value":  buildWatchPartyLinks(getWatchParties(region)),
+				"value":  buildWatchPartyLinks(GetWatchParties(region)),
 				"inline": true,
 			},
 		},
@@ -303,7 +305,9 @@ func sendMatchStartToDiscord(match MatchDetail) {
 		return
 	}
 
-	sendToDiscord(webhookURL, messageBytes)
+	messageId := sendToDiscord(webhookURL, messageBytes)
+
+	updateSentMessage(messageId, "starting_sent")
 }
 
 func sendResultsToDiscord(results MatchData) {
@@ -341,42 +345,79 @@ func sendResultsToDiscord(results MatchData) {
 		return
 	}
 
-	sendToDiscord(webhookURL, messageBytes)
-}
-
-func checkVCT(tournament string) bool {
-	return strings.Contains(tournament, "Champions")
-}
-
-func getTwitchLink(region string) string {
-	return twitchLinks[region]
-}
-
-func getYoutubeLink(region string) string {
-	return youtubeLinks[region]
-}
-
-func getWatchParties(region string) map[string]string {
-	return watchParties[region]
-}
-
-func parseDurationFromNow(durationStr string) (int64, error) {
-	durationStr = strings.ReplaceAll(durationStr, " ", "")
-	duration, _ := time.ParseDuration(durationStr)
-	fmt.Println("Duration:", duration)
-
-	return time.Now().Add(duration).Round(time.Hour).Unix(), nil
-}
-
-func getRegion(tournament string) (region string) {
-	if strings.Contains(tournament, "EMEA") {
-		return "EMEA"
-	} else if strings.Contains(tournament, "China") {
-		return "China"
-	} else if strings.Contains(tournament, "Americas") {
-		return "Americas"
-	} else if strings.Contains(tournament, "Pacific") {
-		return "Pacific"
+	messageId := sendToDiscord(webhookURL, messageBytes)
+	for range results.Data {
+		updateSentMessage(messageId, "result_sent")
 	}
-	return ""
+}
+
+func getSentMessages() ([]Message, error) {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT * FROM messages")
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var messages []Message
+
+	for rows.Next() {
+		var message Message
+
+		err = rows.Scan(&message.Id, &message.MessageId, &message.MatchId, &message.AnnouncementSent, &message.StartingSent, &message.ResultSent)
+		if err != nil {
+			log.Fatal(err)
+			return nil, err
+		}
+		messages = append(messages, message)
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	return messages, nil
+}
+
+func addSentMessage(matchId int, messageId int) error {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	defer db.Close()
+
+	_, err = db.Exec("INSERT INTO messages (match_id, message_id, announcement_sent, starting_sent, result_sent) VALUES (?, ?, ?, ?, ?)",
+		matchId, messageId, true, false, false)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	return nil
+}
+
+func updateSentMessage(messageId int, field string) error {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	defer db.Close()
+
+	_, err = db.Exec(fmt.Sprintf("UPDATE messages SET %s = ? WHERE message_id = ?", field), true, messageId)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	return nil
 }

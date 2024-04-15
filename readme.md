@@ -1,5 +1,17 @@
+# Go VCT 
+
+Sends automated messages with Valorant Champions Tournament Updates to a discord webhook.
+
+Updates Inculde 
+- Upcoming matches
+- Starting matches
+- Ending machtes
+
+Also theres a selection of offical streams and watch parties. 
+
 ## How to use
 
-- Create a .env file based on the `.env.example` file
-- Create a new webhook in the channel that you want to use
-- Add the webhook url in the .env file
+- Install docker if you havent already
+- Create a `.env` based on the `.env.example` and add the webhook url
+- Run `docker build . -t bot:latest`
+- Run `docker run --env-file ./.env -it bot`

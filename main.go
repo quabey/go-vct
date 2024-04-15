@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -40,14 +39,14 @@ type Team struct {
 }
 
 var (
-	webhookURL  			string
-	runningMatchId          string
-	lastResultId            string
-	lastUpcomingMatchId     string
+	webhookURL          string
+	runningMatchId      string
+	lastResultId        string
+	lastUpcomingMatchId string
 
 	twitchLinks = map[string]string{
 		"Americas": "https://www.twitch.tv/valorant_americas",
-		"China":    "https://www.twitch.tv/valorant_china",
+		"China":    "https://www.twitch.tv/valorantesports_cn",
 		"EMEA":     "https://www.twitch.tv/valorant_emea",
 		"Pacific":  "https://www.twitch.tv/valorant_pacific",
 	}
@@ -55,8 +54,8 @@ var (
 	youtubeLinks = map[string]string{
 		"Americas": "https://www.youtube.com/@valorant_americas/live",
 		"China":    "https://www.youtube.com/@VALORANTEsportsCN/live",
-		"EMEA":     "https://www.youtube.com/@valorant_emea/live",
-		"Pacific":  "https://www.youtube.com/@valorant_pacific/live",
+		"EMEA":     "https://www.youtube.com/@VALORANTEsportsEMEA/live",
+		"Pacific":  "https://www.youtube.com/@VCTPacific/live",
 	}
 
 	roles = map[string]string{
@@ -68,12 +67,12 @@ var (
 
 	watchParties = map[string]map[string]string{
 		"Pacific": {
-			"Sliggy":                 "https://www.twitch.tv/sliggytv",
-			"FNS":                    "https://www.twitch.tv/gofns",
-			"Sean Gares":             "https://www.twitch.tv/sgares",
-			"Thinking Mans Valorant": "https://www.twitch.tv/thinkingmansvalorant",
-			"Tarik":                  "https://www.twitch.tv/tarik",
-			"Kyedae":                 "https://www.twitch.tv/kyedae",
+			"FNS":                  "https://www.twitch.tv/gofns",
+			"Sliggy":               "https://www.twitch.tv/sliggytv",
+			"Sgares":               "https://www.twitch.tv/sgares",
+			"ThinkingMansValorant": "https://www.twitch.tv/thinkingmansvalorant",
+			"tarik":                "https://www.twitch.tv/tarik",
+			"kyedae":               "https://www.twitch.tv/kyedae",
 		},
 		"EMEA": {
 			"FNS":                  "https://www.twitch.tv/gofns",
@@ -119,7 +118,7 @@ func getUpcoming() {
 	data := fetchData("https://vlr.orlandomm.net/api/v1/matches")
 	filter := []MatchDetail{}
 	for _, match := range data.Data {
-		if checkVCT(match.Tournament){
+		if checkVCT(match.Tournament) {
 			filter = append(filter, match)
 		}
 	}
@@ -150,7 +149,7 @@ func checkGameStart(currentUpcoming MatchData) {
 
 func checkAndSendResults() {
 	results := fetchData("https://vlr.orlandomm.net/api/v1/results?page=1")
-	if results.Data[0].ID != lastResultId && checkVCT(results.Data[0].Tournament)  {
+	if results.Data[0].ID != lastResultId && checkVCT(results.Data[0].Tournament) {
 		fmt.Println("New result found!")
 		lastResultId = results.Data[0].ID
 		sendResultsToDiscord(results)
@@ -362,38 +361,11 @@ func getWatchParties(region string) map[string]string {
 }
 
 func parseDurationFromNow(durationStr string) (int64, error) {
-	// Split the string by spaces
-	parts := strings.Split(durationStr, " ")
-	if len(parts) != 2 {
-		return 0, fmt.Errorf("invalid format, expected 'HHh MMm'")
-	}
+	durationStr = strings.ReplaceAll(durationStr, " ", "")
+	duration, _ := time.ParseDuration(durationStr)
+	fmt.Println("Duration:", duration)
 
-	minutes := 0
-
-	for _, part := range parts {
-		if strings.Contains(part, "h") {
-			hours, err := strconv.Atoi(strings.TrimSuffix(part, "h"))
-			if err != nil {
-				return 0, err
-			}
-			minutes += hours * 60
-		}
-		if strings.Contains(part, "m") {
-			min, err := strconv.Atoi(strings.TrimSuffix(part, "m"))
-			if err != nil {
-				return 0, err
-			}
-			minutes += min
-		}
-		if strings.Contains(part, "d") {
-			days, err := strconv.Atoi(strings.TrimSuffix(part, "m"))
-			if err != nil {
-				return 0, err
-			}
-			minutes += days * 24 * 60
-		}
-	}
-	return time.Now().Add(time.Duration(minutes) * time.Minute).Unix(), nil
+	return time.Now().Add(duration).Round(time.Hour).Unix(), nil
 }
 
 func getRegion(tournament string) (region string) {

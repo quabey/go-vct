@@ -1,10 +1,11 @@
 package main
 
 import (
+	"bey/go-vct/helpers"
 	"testing"
 )
 
 func TestTimestamp(t *testing.T) {
-	ParseDurationFromNow("1h 15m")
-	ParseDurationFromNow("d")
+	helpers.ParseDurationFromNow("1h 15m")
+	helpers.ParseDurationFromNow("d")
 }

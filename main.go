@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bey/go-vct/helpers"
 	"bytes"
 	"database/sql"
 	"encoding/json"
@@ -99,7 +100,7 @@ func getUpcoming() {
 	data := fetchData("https://vlr.orlandomm.net/api/v1/matches")
 	filter := []MatchDetail{}
 	for _, match := range data.Data {
-		if CheckVCT(match.Tournament) {
+		if helpers.CheckVCT(match.Tournament) {
 			filter = append(filter, match)
 		}
 	}
@@ -130,7 +131,7 @@ func checkGameStart(currentUpcoming MatchData) {
 
 func checkAndSendResults() {
 	results := fetchData("https://vlr.orlandomm.net/api/v1/results?page=1")
-	if results.Data[0].ID != lastResultId && CheckVCT(results.Data[0].Tournament) {
+	if results.Data[0].ID != lastResultId && helpers.CheckVCT(results.Data[0].Tournament) {
 		fmt.Println("New result found!")
 		lastResultId = results.Data[0].ID
 		sendResultsToDiscord(results)
@@ -204,10 +205,10 @@ func sendUpcomingToDiscord(matches MatchData) {
 
 	embeds := make([]map[string]interface{}, len(matches.Data))
 	for i, match := range matches.Data {
-		region := GetRegion(match.Tournament)
+		region := helpers.GetRegion(match.Tournament)
 		title := "Live Match"
 		if match.In != "" {
-			timestamp, err := ParseDurationFromNow(match.In)
+			timestamp, err := helpers.ParseDurationFromNow(match.In)
 			if err != nil {
 				fmt.Println("Error parsing duration:", err)
 				continue
@@ -227,12 +228,12 @@ func sendUpcomingToDiscord(matches MatchData) {
 				{
 					"name": "Riot Streams",
 					"value": fmt.Sprintf("[Twitch](%s)\n[YouTube](%s)",
-						GetTwitchLink(region), GetYoutubeLink(region)),
+						helpers.GetTwitchLink(region), helpers.GetYoutubeLink(region)),
 					"inline": true,
 				},
 				{
 					"name":   "Watch Parties",
-					"value":  buildWatchPartyLinks(GetWatchParties(region)),
+					"value":  buildWatchPartyLinks(helpers.GetWatchParties(region)),
 					"inline": true,
 				},
 			},
@@ -269,7 +270,7 @@ func buildWatchPartyLinks(parties map[string]string) string {
 }
 
 func sendMatchStartToDiscord(match MatchDetail) {
-	region := GetRegion(match.Tournament)
+	region := helpers.GetRegion(match.Tournament)
 	title := fmt.Sprintf("Match Start: **%s** vs **%s**", match.Teams[0].Name, match.Teams[1].Name)
 	embed := map[string]interface{}{
 		"type":        "rich",
@@ -283,12 +284,12 @@ func sendMatchStartToDiscord(match MatchDetail) {
 			{
 				"name": "Riot Streams",
 				"value": fmt.Sprintf("[Twitch](%s)\n[YouTube](%s)",
-					GetTwitchLink(region), GetYoutubeLink(region)),
+					helpers.GetTwitchLink(region), helpers.GetYoutubeLink(region)),
 				"inline": true,
 			},
 			{
 				"name":   "Watch Parties",
-				"value":  buildWatchPartyLinks(GetWatchParties(region)),
+				"value":  buildWatchPartyLinks(helpers.GetWatchParties(region)),
 				"inline": true,
 			},
 		},

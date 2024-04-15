@@ -1,3 +1,4 @@
 .env
 sqlite
 .idea
+**.exe

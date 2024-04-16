@@ -43,5 +43,12 @@ type Message struct {
 	ResultSent       bool
 }
 
-var WebhookURL string = os.Getenv("WEBHOOK_URL")
-var DbPath string = os.Getenv("SQLITE_DB")
+var (
+	WebhookURL string
+	DbPath     string
+)
+
+func LoadEnvVariables() {
+	WebhookURL = os.Getenv("WEBHOOK_URL")
+	DbPath = os.Getenv("SQLITE_DB")
+}

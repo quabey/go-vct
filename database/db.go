@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath" // Correct import for filepath
+
 	_ "github.com/mattn/go-sqlite3" // replace with the import path for your SQL driver
 )
 
@@ -34,12 +35,12 @@ func InitDB(databasePath string) {
 
 		sqlStmt := `
 		CREATE TABLE messages (
-			Id INTEGER NOT NULL PRIMARY KEY, 
-			MessageId TEXT, 
-			MatchId TEXT, 
-			AnnouncementSent BOOLEAN, 
-			StartingSent BOOLEAN, 
-			ResultSent BOOLEAN
+			id INTEGER NOT NULL PRIMARY KEY, 
+			message_id TEXT, 
+			match_id TEXT, 
+			announcement_sent BOOLEAN, 
+			starting_sent BOOLEAN, 
+			result_sent BOOLEAN
 		);
 		`
 		_, err = db.Exec(sqlStmt)

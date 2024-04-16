@@ -5,13 +5,13 @@ import (
 	"bey/go-vct/database"
 	"bey/go-vct/discord"
 	"bey/go-vct/helpers"
+	"bey/go-vct/initializers"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -21,13 +21,18 @@ var (
 	lastUpcomingMatchId string
 )
 
+func init() {
+	initializers.GetEnvVariables()
+	common.LoadEnvVariables()
+}
+
 func main() {
 	fmt.Println("Starting...")
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	// database.InitDB("./sqlite/messages.db")
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Fatal("Error loading .env file")
+	// }
+	database.InitDB(common.DbPath)
 	// webhookURL = os.Getenv("WEBHOOK_URL")
 	// dbPath = os.Getenv("SQLITE_DB")
 

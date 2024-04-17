@@ -1,6 +1,9 @@
 package common
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 type MatchData struct {
 	Status string        `json:"status"`
@@ -49,6 +52,6 @@ var (
 )
 
 func LoadEnvVariables() {
-	WebhookURL = os.Getenv("WEBHOOK_URL")
+	WebhookURL = fmt.Sprintf("%s?wait=true", os.Getenv("DISCORD_WEBHOOK"));
 	DbPath = os.Getenv("SQLITE_DB")
 }

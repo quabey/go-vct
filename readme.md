@@ -1,13 +1,14 @@
-# Go VCT 
+# Go VCT
 
-Sends automated messages with Valorant Champions Tournament Updates to a discord webhook.
+Sends automated messages with Valorant Champions Tournament Updates to a services webhook.
 
-Updates Inculde 
+Updates Inculde
+
 - Upcoming matches
 - Starting matches
 - Ending machtes
 
-Also theres a selection of offical streams and watch parties. 
+Also theres a selection of offical streams and watch parties.
 
 ## How to use
 

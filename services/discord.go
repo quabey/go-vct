@@ -1,4 +1,4 @@
-package discord
+package services
 
 import (
 	"bey/go-vct/common"
@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-func sendToDiscord(url string, payload []byte) int {
+func sendToservices(url string, payload []byte) int {
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(payload))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
@@ -55,7 +55,7 @@ func sendToDiscord(url string, payload []byte) int {
 	return 6
 }
 
-func SendUpcomingToDiscord(matches common.MatchData) {
+func SendUpcomingToservices(matches common.MatchData) {
 	if len(matches.Data) > 3 {
 		matches.Data = matches.Data[:3] // Only take the first 2 matches
 	}
@@ -108,7 +108,7 @@ func SendUpcomingToDiscord(matches common.MatchData) {
 		return
 	}
 
-	messageId := sendToDiscord(common.WebhookURL, messageBytes)
+	messageId := sendToservices(common.WebhookURL, messageBytes)
 	for _, match := range matches.Data {
 		intMatchId, _ := strconv.Atoi(match.ID)
 		database.AddSentMessage(intMatchId, messageId)
@@ -126,7 +126,7 @@ func BuildWatchPartyLinks(parties map[string]string) string {
 	return strings.Join(links, "\n")
 }
 
-func SendMatchStartToDiscord(match common.MatchDetail) {
+func SendMatchStartToservices(match common.MatchDetail) {
 	region := helpers.GetRegion(match.Tournament)
 	title := fmt.Sprintf("Match Start: **%s** vs **%s**", match.Teams[0].Name, match.Teams[1].Name)
 	embed := map[string]interface{}{
@@ -163,12 +163,12 @@ func SendMatchStartToDiscord(match common.MatchDetail) {
 		return
 	}
 
-	messageId := sendToDiscord(common.WebhookURL, messageBytes)
+	messageId := sendToservices(common.WebhookURL, messageBytes)
 
 	database.UpdateSentMessage(messageId, "starting_sent")
 }
 
-func SendResultsToDiscord(results common.MatchData) {
+func SendResultsToservices(results common.MatchData) {
 	if len(results.Data) > 0 {
 		results.Data = results.Data[:1] // Only take the latest result
 	}
@@ -203,7 +203,7 @@ func SendResultsToDiscord(results common.MatchData) {
 		return
 	}
 
-	messageId := sendToDiscord(common.WebhookURL, messageBytes)
+	messageId := sendToservices(common.WebhookURL, messageBytes)
 	for range results.Data {
 		database.UpdateSentMessage(messageId, "result_sent")
 	}

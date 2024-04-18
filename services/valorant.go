@@ -14,25 +14,31 @@ var (
 	lastUpcomingMatchId string
 )
 
-func GetUpcoming() {
-	fmt.Println("Fetching upcoming matches...")
-	data := FetchData("https://vlr.orlandomm.net/api/v1/matches")
-	filter := []common.MatchDetail{}
-	for _, match := range data.Data {
-		if helpers.CheckVCT(match.Tournament) {
-			filter = append(filter, match)
-		}
-	}
-	data.Data = filter
-	UpdateUpcomingMatches(data)
-	CheckGameStarts(data)
+func GetUpcoming() map[string][]common.MatchDetail {
+    fmt.Println("Fetching upcoming matches...")
+    data := FetchData("https://vlr.orlandomm.net/api/v1/matches")
+    filter := make(map[string][]common.MatchDetail)
+    for _, match := range data.Data {
+        if helpers.CheckVCT(match.Tournament) {
+            region := helpers.GetRegion(match.Tournament)
+            if len(filter[region]) < 3 {
+                filter[region] = append(filter[region], match)
+            }
+        }
+    }
+
+	for _, region := range filter {
+		if len(region) == 0 && {
+
+
+    return filter
 }
 
 func UpdateUpcomingMatches(currentUpcoming common.MatchData) {
 	if currentUpcoming.Data[0].ID != lastUpcomingMatchId {
 		fmt.Println("New upcoming match found!")
 		lastUpcomingMatchId = currentUpcoming.Data[0].ID
-		SendUpcomingToservices(currentUpcoming)
+		SendUpcomingToServices(currentUpcoming)
 		return
 	}
 	fmt.Println("No new upcoming matches found.")

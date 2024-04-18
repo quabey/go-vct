@@ -40,7 +40,8 @@ func InitDB(databasePath string) {
 			match_id TEXT, 
 			announcement_sent BOOLEAN, 
 			starting_sent BOOLEAN, 
-			result_sent BOOLEAN
+			result_sent BOOLEAN,
+			timestamp INTEGER
 		);
 		`
 		_, err = db.Exec(sqlStmt)
@@ -73,7 +74,7 @@ func GetSentMessages() ([]common.Message, error) {
 	for rows.Next() {
 		var message common.Message
 
-		err = rows.Scan(&message.Id, &message.MessageId, &message.MatchId, &message.AnnouncementSent, &message.StartingSent, &message.ResultSent)
+		err = rows.Scan(&message.Id, &message.MessageId, &message.MatchId, &message.AnnouncementSent, &message.StartingSent, &message.ResultSent, &message.Timestamp)
 		if err != nil {
 			log.Fatal(err)
 			return nil, err

@@ -44,6 +44,7 @@ type Message struct {
 	AnnouncementSent bool
 	StartingSent     bool
 	ResultSent       bool
+	Timestamp        int64
 }
 
 var (

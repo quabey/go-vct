@@ -52,6 +52,6 @@ var (
 )
 
 func LoadEnvVariables() {
-	WebhookURL = fmt.Sprintf("%s?wait=true", os.Getenv("DISCORD_WEBHOOK"));
+	WebhookURL = fmt.Sprintf("%s?wait=true", os.Getenv("WEBHOOK_URL"));
 	DbPath = os.Getenv("SQLITE_DB")
 }

@@ -96,7 +96,7 @@ func SendUpcomingToServices(match common.MatchDetail, addFields bool, addContent
 	content := ""
 
 	if addContent {
-		content = fmt.Sprintf("## Upcoming matches for %s", helpers.GetRegion(match.Tournament))
+		content = fmt.Sprintf("## Upcoming match(es) for %s", helpers.GetRegion(match.Tournament))
 	} 
     message := map[string]interface{}{
         "content": content,

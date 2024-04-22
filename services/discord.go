@@ -114,7 +114,7 @@ func SendUpcomingToServices(match common.MatchDetail, addFields bool, addContent
 
 	messageId := sendToServices(common.WebhookURL, messageBytes)
 	intMatchId, _ := strconv.Atoi(match.ID)
-	database.AddSentMessage(intMatchId, messageId)
+	database.AddSentMessage(intMatchId, messageId, int(timestamp))
 }
 
 func BuildWatchPartyLinks(parties map[string]string) string {
@@ -165,39 +165,36 @@ func SendMatchStartToservices(match common.MatchDetail) {
 		return
 	}
 
-	messageId := sendToServices(common.WebhookURL, messageBytes)
+	fmt.Println("Sending message:", string(messageBytes))
 
-	database.UpdateSentMessage(messageId, "starting_sent")
+	sendToServices(common.WebhookURL, messageBytes)
+
+	database.UpdateSentMessage(match.ID, "starting_sent")
 }
 
-func SendResultsToservices(results common.MatchData) {
-	if len(results.Data) > 0 {
-		results.Data = results.Data[:1] // Only take the latest result
+func SendResultsToservices(result common.MatchDetail) {
+
+	score := fmt.Sprintf("**%s** - **%s**", result.Teams[0].Score, result.Teams[1].Score)
+	winner := result.Teams[0].Name
+	if result.Teams[1].Won {
+		score = fmt.Sprintf("**%s** - **%s**", result.Teams[1].Score, result.Teams[0].Score)
+		winner = result.Teams[1].Name
 	}
-	embeds := make([]map[string]interface{}, len(results.Data))
-	for i, result := range results.Data {
-		score := fmt.Sprintf("**%s** - **%s**", result.Teams[0].Score, result.Teams[1].Score)
-		winner := result.Teams[0].Name
-		if result.Teams[1].Won {
-			score = fmt.Sprintf("**%s** - **%s**", result.Teams[1].Score, result.Teams[0].Score)
-			winner = result.Teams[1].Name
-		}
-		title := fmt.Sprintf("Match Result: **%s** vs **%s**", result.Teams[0].Name, result.Teams[1].Name)
-		embeds[i] = map[string]interface{}{
-			"type":        "rich",
-			"title":       title,
-			"description": fmt.Sprintf("||%s|| Wins: ||%s|| \n %s - %s", winner, score, result.Tournament, result.Event),
-			"color":       0x00FFFF,
-			"footer": map[string]interface{}{
-				"text": "Made with ❤️ by bey & Nate",
-			},
-			"fields": []map[string]interface{}{},
-		}
+	title := fmt.Sprintf("Match Result: **%s** vs **%s**", result.Teams[0].Name, result.Teams[1].Name)
+	embed := map[string]interface{}{
+		"type":        "rich",
+		"title":       title,
+		"description": fmt.Sprintf("||%s Wins: %s|| \n %s - %s", winner, score, result.Tournament, result.Event),
+		"color":       0x00FFFF,
+		"footer": map[string]interface{}{
+			"text": "Made with ❤️ by bey & Nate",
+		},
+		"fields": []map[string]interface{}{},
 	}
 
 	message := map[string]interface{}{
 		"content": "",
-		"embeds":  embeds,
+		"embeds":  []map[string]interface{}{embed},
 	}
 	messageBytes, err := json.Marshal(message)
 	if err != nil {
@@ -205,8 +202,6 @@ func SendResultsToservices(results common.MatchData) {
 		return
 	}
 
-	messageId := sendToServices(common.WebhookURL, messageBytes)
-	for range results.Data {
-		database.UpdateSentMessage(messageId, "result_sent")
-	}
+	sendToServices(common.WebhookURL, messageBytes)
+	database.UpdateSentMessage(result.ID, "result_sent")
 }

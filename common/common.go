@@ -43,7 +43,7 @@ var Roles = map[string]string{
 
 type Message struct {
 	Id               int
-	MessageId        string
+	MessageId        int
 	MatchId          string
 	AnnouncementSent bool
 	StartingSent     bool

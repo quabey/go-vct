@@ -55,3 +55,24 @@ func GetHoursFromNow(durationStr string) int {
 func formatDuration(duration string) string {
 	return strings.ReplaceAll(duration, " ", "")
 }
+
+func CheckIfMessageBeenSent(matchId string, messageType string) bool {
+	fmt.Println("============ Trying to find message for matchId:", matchId, "=========")
+	for _, message := range common.Messages {
+
+		fmt.Println(message.MatchId, message.MatchId == matchId)
+		if message.MatchId == matchId {
+			fmt.Println("matchId", message.AnnouncementSent)
+			switch messageType {
+			case "upcoming":
+				return message.AnnouncementSent
+			case "start":
+				return message.StartingSent
+			case "result":
+				return message.ResultSent
+			}
+		}
+	}
+	fmt.Println("======== Not Found ==========")
+	return false
+}

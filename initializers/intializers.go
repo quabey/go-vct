@@ -3,6 +3,7 @@ package initializers
 import (
 	"bey/go-vct/common"
 	"bey/go-vct/database"
+	"fmt"
 	"log"
 
 	"github.com/joho/godotenv"
@@ -17,4 +18,8 @@ func GetEnvVariables() {
 
 func GetSentMessages() {
 	common.Messages, _ = database.GetSentMessages()
+
+	for _, message := range common.Messages {
+		fmt.Println(message)
+	}
 }

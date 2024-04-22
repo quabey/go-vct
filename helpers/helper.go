@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+var NowFunc = time.Now
+
 func GetRegion(tournament string) (region string) {
 	if strings.Contains(tournament, "EMEA") {
 		return "EMEA"
@@ -21,7 +23,7 @@ func GetRegion(tournament string) (region string) {
 }
 
 func ParseDurationFromNow(durationStr string) (int64, error) {
-	durationStr = strings.ReplaceAll(durationStr, " ", "")
+	durationStr = formatDuration(durationStr);
 	duration, _ := time.ParseDuration(durationStr)
 	fmt.Println("Duration:", durationStr, "->", duration)
 
@@ -29,7 +31,18 @@ func ParseDurationFromNow(durationStr string) (int64, error) {
 }
 
 func GetOffsetInHours(match1 common.MatchDetail, match2 common.MatchDetail) int {
-	// Get the time of the first match
+    t1, _ := time.ParseDuration(formatDuration(match1.In))
+    t2, _ := time.ParseDuration(formatDuration(match2.In))
+    duration := t2 - t1
+    return int(duration.Hours())
+}
 
-	return 0
+func GetHoursFromNow(durationStr string) int {
+	durationStr = formatDuration(durationStr);
+	duration, _ := time.ParseDuration(durationStr)
+	return int(duration.Hours())
+}
+
+func formatDuration(duration string) string {
+	return strings.ReplaceAll(duration, " ", "");
 }

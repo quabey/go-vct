@@ -5,6 +5,10 @@ import (
 	"os"
 )
 
+type RegionMatches struct {
+	Matchs []MatchDetail
+}
+
 type MatchData struct {
 	Status string        `json:"status"`
 	Size   int           `json:"size"`

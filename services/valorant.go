@@ -14,7 +14,7 @@ var (
 	lastUpcomingMatchId string
 )
 
-func GetUpcoming() map[string][]common.MatchDetail {
+func GetUpcoming() map[string][]common.RegionMatches {
     fmt.Println("Fetching upcoming matches...")
     data := FetchData("https://vlr.orlandomm.net/api/v1/matches")
     filter := make(map[string][]common.MatchDetail)
@@ -28,21 +28,21 @@ func GetUpcoming() map[string][]common.MatchDetail {
     }
 
 	for _, region := range filter {
-		if len(region) == 0 && {
-
-
+    for i := 0; i < len(region); i++ {
+        if region[i].In != "" && helpers.GetHoursFromNow(region[i].In) < 10 {
+            SendUpcomingToServices(region[i], false)
+            if i < len(region)-1 && helpers.GetOffsetInHours(region[i], region[i+1]) < 3 {
+                SendUpcomingToServices(region[i+1], false)
+            }
+        }
+    }
+}
     return filter
 }
 
-func UpdateUpcomingMatches(currentUpcoming common.MatchData) {
-	if currentUpcoming.Data[0].ID != lastUpcomingMatchId {
-		fmt.Println("New upcoming match found!")
-		lastUpcomingMatchId = currentUpcoming.Data[0].ID
-		SendUpcomingToServices(currentUpcoming)
-		return
-	}
-	fmt.Println("No new upcoming matches found.")
-}
+
+
+
 
 func CheckGameStarts(currentUpcoming common.MatchData) {
 	if currentUpcoming.Data[0].ID != runningMatchId && currentUpcoming.Data[0].In == "" {

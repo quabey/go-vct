@@ -8,12 +8,6 @@ import (
 	"net/http"
 )
 
-var (
-	runningMatchId      string
-	lastResultId        string
-	lastUpcomingMatchId string
-)
-
 func GetUpcoming() {
 	fmt.Println("Fetching upcoming matches...")
 	data := FetchData("https://vlr.orlandomm.net/api/v1/matches")
@@ -28,7 +22,7 @@ func GetUpcoming() {
 	}
 
 	for _, region := range filter {
-		fmt.Printf("Message been sent for %s ?: %s", region[0].ID, helpers.CheckIfMessageBeenSent(region[0].ID, "upcoming"))
+		fmt.Printf("Message been sent for %s ?: %t", region[0].ID, helpers.CheckIfMessageBeenSent(region[0].ID, "upcoming"))
 		if len(region) > 0 && region[0].In != "" && helpers.GetHoursFromNow(region[0].In) < 10 && !helpers.CheckIfMessageBeenSent(region[0].ID, "upcoming") {
 			SendUpcomingToServices(region[0], false, true)
 			if len(region) >= 2 && helpers.GetOffsetInHours(region[0], region[1]) <= 3 {
@@ -48,7 +42,6 @@ var followingMatch common.MatchDetail
 func CheckGameStarts(currentUpcoming common.MatchDetail) {
 	if currentUpcoming.In != "" && !helpers.CheckIfMessageBeenSent(currentUpcoming.ID, "start") {
 		fmt.Println("Match is starting!")
-		runningMatchId = currentUpcoming.ID
 		isFirst := helpers.GetHoursFromNow(followingMatch.In) <= 3
 		SendMatchStartToServices(currentUpcoming, isFirst)
 		return
@@ -61,7 +54,6 @@ func CheckAndSendResults() {
 	for index, match := range results.Data {
 		if !helpers.CheckIfMessageBeenSent(match.ID, "result") && helpers.CheckVCT(match.Tournament) {
 			fmt.Println("New result found!")
-			lastResultId = results.Data[0].ID
 			SendResultsToservices(match)
 			return
 		}

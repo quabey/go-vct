@@ -12,7 +12,7 @@ import (
 func GetEnvVariables() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Printf("this is only bad if you are not using docker")
 	}
 }
 

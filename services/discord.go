@@ -128,35 +128,50 @@ func BuildWatchPartyLinks(parties map[string]string) string {
 	return strings.Join(links, "\n")
 }
 
-func SendMatchStartToservices(match common.MatchDetail) {
+func SendMatchStartToServices(match common.MatchDetail, firstMatch bool) {
 	region := helpers.GetRegion(match.Tournament)
 	title := fmt.Sprintf("Match Start: **%s** vs **%s**", match.Teams[0].Name, match.Teams[1].Name)
-	embed := map[string]interface{}{
-		"type":        "rich",
-		"title":       title,
-		"description": fmt.Sprintf("%s at %s - %s", match.Tournament, match.Event, match.Status),
-		"color":       0x00FFFF,
-		"footer": map[string]interface{}{
-			"text": "Made with ❤️ by bey & Nate",
+	embed := common.Embed{
+		Type:        "rich",
+		Title:       title,
+		Description: fmt.Sprintf("%s at %s - %s", match.Tournament, match.Event, match.Status),
+		Color:       0x00FFFF,
+		Thumbnail: common.EmbedThumbnail{
+			URL:    match.Img,
+			Height: 20,
+			Width:  20,
 		},
-		"fields": []map[string]interface{}{
-			{
-				"name": "Riot Streams",
-				"value": fmt.Sprintf("[Twitch](%s)\n[YouTube](%s)",
-					helpers.GetTwitchLink(region), helpers.GetYoutubeLink(region)),
-				"inline": true,
-			},
-			{
-				"name":   "Watch Parties",
-				"value":  BuildWatchPartyLinks(helpers.GetWatchParties(region)),
-				"inline": true,
-			},
+		Footer: common.EmbedFooter{
+			Text: "Made with ❤️ by bey & Nate",
 		},
 	}
 
-	message := map[string]interface{}{
-		"content": fmt.Sprintf("<@&%s>", common.Roles[region]),
-		"embeds":  []map[string]interface{}{embed},
+	fields := []common.EmbedField{}
+	if firstMatch {
+		fields = append(fields, common.EmbedField{
+			Name:   "Riot Streams",
+			Value:  fmt.Sprintf("[Twitch](%s)\n[YouTube](%s)", helpers.GetTwitchLink(region), helpers.GetYoutubeLink(region)),
+			Inline: true,
+		})
+		fields = append(fields, common.EmbedField{
+			Name:   "Watch Parties",
+			Value:  BuildWatchPartyLinks(helpers.GetWatchParties(region)),
+			Inline: true,
+		})
+
+		if helpers.GetHoursFromNow(followingMatch.In) <= 3 {
+			followingTimestamp, _ := helpers.ParseDurationFromNow(followingMatch.In)
+			fields = append(fields, common.EmbedField{
+				Name:  "Following Match",
+				Value: fmt.Sprintf("**%s** vs **%s** - at <t:%d:>", followingMatch.Teams[0].Name, followingMatch.Teams[1].Name, followingTimestamp),
+			})
+		}
+		embed.Fields = fields
+	}
+
+	message := common.WebhookMessage{
+		Content: fmt.Sprintf("<@&%s>", common.Roles[region]),
+		Embeds:  []common.Embed{embed},
 	}
 
 	messageBytes, err := json.Marshal(message)
@@ -166,9 +181,7 @@ func SendMatchStartToservices(match common.MatchDetail) {
 	}
 
 	fmt.Println("Sending message:", string(messageBytes))
-
 	sendToServices(common.WebhookURL, messageBytes)
-
 	database.UpdateSentMessage(match.ID, "starting_sent")
 }
 

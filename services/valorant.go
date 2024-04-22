@@ -28,7 +28,6 @@ func GetUpcoming() {
 	}
 
 	for _, region := range filter {
-		CheckGameStarts(region[0])
 		fmt.Printf("Message been sent for %s ?: %s", region[0].ID, helpers.CheckIfMessageBeenSent(region[0].ID, "upcoming"))
 		if len(region) > 0 && region[0].In != "" && helpers.GetHoursFromNow(region[0].In) < 10 && !helpers.CheckIfMessageBeenSent(region[0].ID, "upcoming") {
 			SendUpcomingToServices(region[0], false, true)
@@ -39,14 +38,19 @@ func GetUpcoming() {
 				}
 			}
 		}
+		followingMatch = region[1]
+		CheckGameStarts(region[0])
 	}
 }
 
+var followingMatch common.MatchDetail
+
 func CheckGameStarts(currentUpcoming common.MatchDetail) {
-	if currentUpcoming.In == "" && !helpers.CheckIfMessageBeenSent(currentUpcoming.ID, "start") {
+	if currentUpcoming.In != "" && !helpers.CheckIfMessageBeenSent(currentUpcoming.ID, "start") {
 		fmt.Println("Match is starting!")
 		runningMatchId = currentUpcoming.ID
-		SendMatchStartToservices(currentUpcoming)
+		isFirst := helpers.GetHoursFromNow(followingMatch.In) <= 3
+		SendMatchStartToServices(currentUpcoming, isFirst)
 		return
 	}
 	fmt.Printf("No new match has started in %s", helpers.GetRegion(currentUpcoming.Tournament))

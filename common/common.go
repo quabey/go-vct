@@ -51,6 +51,37 @@ type Message struct {
 	Timestamp        int64
 }
 
+type EmbedField struct {
+	Name   string `json:"name"`
+	Value  string `json:"value"`
+	Inline bool   `json:"inline"`
+}
+
+type Embed struct {
+	Type        string         `json:"type"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Color       int            `json:"color"`
+	Thumbnail   EmbedThumbnail `json:"thumbnail"`
+	Footer      EmbedFooter    `json:"footer"`
+	Fields      []EmbedField   `json:"fields,omitempty"`
+}
+
+type EmbedThumbnail struct {
+	URL    string `json:"url"`
+	Height int    `json:"height"`
+	Width  int    `json:"width"`
+}
+
+type EmbedFooter struct {
+	Text string `json:"text"`
+}
+
+type WebhookMessage struct {
+	Content string  `json:"content"`
+	Embeds  []Embed `json:"embeds"`
+}
+
 var (
 	WebhookURL string
 	DbPath     string

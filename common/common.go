@@ -46,6 +46,17 @@ type Message struct {
 	ResultSent       bool
 }
 
+type SentMessage struct {
+	Id               int
+	MessageId        string
+	MatchId          string
+	AnnouncementSent bool
+	StartingSent     bool
+	ResultSent       bool
+}
+
+type SentMessages []SentMessage
+
 var (
 	WebhookURL string
 	DbPath     string

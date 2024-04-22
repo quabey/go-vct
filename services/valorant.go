@@ -15,28 +15,28 @@ var (
 )
 
 func GetUpcoming() {
-    fmt.Println("Fetching upcoming matches...")
-    data := FetchData("https://vlr.orlandomm.net/api/v1/matches")
-    filter := make(map[string][]common.MatchDetail)
-    for _, match := range data.Data {
-        if helpers.CheckVCT(match.Tournament) {
-            region := helpers.GetRegion(match.Tournament)
-            if len(filter[region]) < 3 {
-                filter[region] = append(filter[region], match)
-            }
-        }
-    }
+	fmt.Println("Fetching upcoming matches...")
+	data := FetchData("https://vlr.orlandomm.net/api/v1/matches")
+	filter := make(map[string][]common.MatchDetail)
+	for _, match := range data.Data {
+		if helpers.CheckVCT(match.Tournament) {
+			region := helpers.GetRegion(match.Tournament)
+			if len(filter[region]) < 3 {
+				filter[region] = append(filter[region], match)
+			}
+		}
+	}
 
 	for _, region := range filter {
-        if len(region) > 0 && region[0].In != "" && helpers.GetHoursFromNow(region[0].In) < 10 {
-            SendUpcomingToServices(region[0], false, true)
-            if len(region) >= 2 && helpers.GetOffsetInHours(region[0], region[1]) <= 3 {
-                SendUpcomingToServices(region[1], false, false)
+		if len(region) > 0 && region[0].In != "" && helpers.GetHoursFromNow(region[0].In) < 10 {
+			SendUpcomingToServices(region[0], false, true)
+			if len(region) >= 2 && helpers.GetOffsetInHours(region[0], region[1]) <= 3 {
+				SendUpcomingToServices(region[1], false, false)
 				if len(region) >= 3 && helpers.GetOffsetInHours(region[1], region[2]) <= 3 {
 					SendUpcomingToServices(region[2], false, false)
-				} 
-            }
-        }
+				}
+			}
+		}
 	}
 }
 

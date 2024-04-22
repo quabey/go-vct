@@ -16,7 +16,7 @@ var (
 		"EMEA":     "https://www.youtube.com/@VALORANTEsportsEMEA/live",
 		"Pacific":  "https://www.youtube.com/@VCTPacific/live",
 	}
-	
+
 	watchParties = map[string]map[string]string{
 		"Pacific": {
 			"FNS":                  "https://www.twitch.tv/gofns",

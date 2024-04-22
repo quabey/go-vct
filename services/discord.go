@@ -56,62 +56,65 @@ func sendToServices(url string, payload []byte) int {
 }
 
 func SendUpcomingToServices(match common.MatchDetail, addFields bool, addContent bool) {
-    region := helpers.GetRegion(match.Tournament)
-    title := "Live Match"
-    if match.In != "" {
-        timestamp, err := helpers.ParseDurationFromNow(match.In)
-        if err != nil {
-            fmt.Println("Error parsing duration:", err)
-            return
-        }
-        title = fmt.Sprintf("Upcoming Match at <t:%d:t>", timestamp)
-    }
-    title = fmt.Sprintf("%s: %s", title, fmt.Sprintf("**%s** vs **%s**", match.Teams[0].Name, match.Teams[1].Name))
-    embed := map[string]interface{}{
-        "type":        "rich",
-        "title":       title,
-        "description": fmt.Sprintf("%s at %s - %s", match.Tournament, match.Event, match.Status),
-        "color":       0x00FFFF,
-        "footer": map[string]interface{}{
-            "text": "Made with ❤️ by bey & Nate",
-        },
-    }
+	region := helpers.GetRegion(match.Tournament)
+	title := "Live Match"
+	var timestamp int64
+	if match.In == "" {
+		return
+	}
+	timestamp, err := helpers.ParseDurationFromNow(match.In)
+	if err != nil {
+		fmt.Println("Error parsing duration:", err)
+		return
+	}
+	title = fmt.Sprintf("Upcoming Match at <t:%d:t>", timestamp)
 
-    if addFields {
-        embed["fields"] = []map[string]interface{}{
-            {
-                "name": "Riot Streams",
-                "value": fmt.Sprintf("[Twitch](%s)\n[YouTube](%s)",
-                    helpers.GetTwitchLink(region), helpers.GetYoutubeLink(region)),
-                "inline": true,
-            },
-            {
-                "name":   "Watch Parties",
-                "value":  BuildWatchPartyLinks(helpers.GetWatchParties(region)),
-                "inline": true,
-            },
-        }
-    }
+	title = fmt.Sprintf("%s: %s", title, fmt.Sprintf("**%s** vs **%s**", match.Teams[0].Name, match.Teams[1].Name))
+	embed := map[string]interface{}{
+		"type":        "rich",
+		"title":       title,
+		"description": fmt.Sprintf("%s at %s - %s", match.Tournament, match.Event, match.Status),
+		"color":       0x00FFFF,
+		"footer": map[string]interface{}{
+			"text": "Made with ❤️ by bey & Nate",
+		},
+	}
+
+	if addFields {
+		embed["fields"] = []map[string]interface{}{
+			{
+				"name": "Riot Streams",
+				"value": fmt.Sprintf("[Twitch](%s)\n[YouTube](%s)",
+					helpers.GetTwitchLink(region), helpers.GetYoutubeLink(region)),
+				"inline": true,
+			},
+			{
+				"name":   "Watch Parties",
+				"value":  BuildWatchPartyLinks(helpers.GetWatchParties(region)),
+				"inline": true,
+			},
+		}
+	}
 
 	content := ""
 
 	if addContent {
 		content = fmt.Sprintf("## Upcoming match(es) for %s", helpers.GetRegion(match.Tournament))
-	} 
-    message := map[string]interface{}{
-        "content": content,
-        "embeds":  []map[string]interface{}{embed},
-    }
+	}
+	message := map[string]interface{}{
+		"content": content,
+		"embeds":  []map[string]interface{}{embed},
+	}
 
-    messageBytes, err := json.Marshal(message)
-    if err != nil {
-        fmt.Println("Error marshalling message:", err)
-        return
-    }
+	messageBytes, err := json.Marshal(message)
+	if err != nil {
+		fmt.Println("Error marshalling message:", err)
+		return
+	}
 
-    messageId := sendToServices(common.WebhookURL, messageBytes)
-    intMatchId, _ := strconv.Atoi(match.ID)
-    database.AddSentMessage(intMatchId, messageId)
+	messageId := sendToServices(common.WebhookURL, messageBytes)
+	intMatchId, _ := strconv.Atoi(match.ID)
+	database.AddSentMessage(intMatchId, messageId)
 }
 
 func BuildWatchPartyLinks(parties map[string]string) string {

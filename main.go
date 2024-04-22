@@ -6,7 +6,6 @@ import (
 	"bey/go-vct/initializers"
 	"bey/go-vct/services"
 	"fmt"
-	"log"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -16,6 +15,7 @@ func init() {
 	initializers.GetEnvVariables()
 	common.LoadEnvVariables()
 	database.InitDB(common.DbPath)
+	initializers.GetSentMessages()
 }
 
 func main() {
@@ -24,12 +24,7 @@ func main() {
 	return
 	fmt.Println("Starting...")
 
-	messages, err := database.GetSentMessages()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, message := range messages {
+	for _, message := range common.Messages {
 		fmt.Println(message)
 	}
 

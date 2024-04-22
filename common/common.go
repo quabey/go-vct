@@ -54,9 +54,10 @@ type Message struct {
 var (
 	WebhookURL string
 	DbPath     string
+	Messages   []Message
 )
 
 func LoadEnvVariables() {
-	WebhookURL = fmt.Sprintf("%s?wait=true", os.Getenv("WEBHOOK_URL"));
+	WebhookURL = fmt.Sprintf("%s?wait=true", os.Getenv("WEBHOOK_URL"))
 	DbPath = os.Getenv("SQLITE_DB")
 }

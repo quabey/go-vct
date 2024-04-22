@@ -37,21 +37,21 @@ func ParseDurationFromNow(durationStr string) (int64, error) {
 }
 
 func GetOffsetInHours(match1 common.MatchDetail, match2 common.MatchDetail) int {
-    t1, _ := str2duration.ParseDuration(formatDuration(match1.In))
-    t2, _ := str2duration.ParseDuration(formatDuration(match2.In))
-    offset := t2 - t1
+	t1, _ := str2duration.ParseDuration(formatDuration(match1.In))
+	t2, _ := str2duration.ParseDuration(formatDuration(match2.In))
+	offset := t2 - t1
 	fmt.Printf("Dur1: %s, Dur2: %s, Offset: ", t1, t2)
 	fmt.Println(int(offset.Hours()))
-    return int(offset.Hours())
+	return int(offset.Hours())
 }
 
 func GetHoursFromNow(durationStr string) int {
-	durationStr = formatDuration(durationStr);
+	durationStr = formatDuration(durationStr)
 	duration, _ := str2duration.ParseDuration(durationStr)
 	fmt.Println()
 	return int(duration.Hours())
 }
 
 func formatDuration(duration string) string {
-	return strings.ReplaceAll(duration, " ", "");
+	return strings.ReplaceAll(duration, " ", "")
 }

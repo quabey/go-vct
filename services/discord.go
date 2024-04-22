@@ -55,7 +55,7 @@ func sendToServices(url string, payload []byte) int {
 	return 6
 }
 
-func SendUpcomingToServices(match common.MatchDetail, addFields bool) {
+func SendUpcomingToServices(match common.MatchDetail, addFields bool, addContent bool) {
     region := helpers.GetRegion(match.Tournament)
     title := "Live Match"
     if match.In != "" {
@@ -93,8 +93,13 @@ func SendUpcomingToServices(match common.MatchDetail, addFields bool) {
         }
     }
 
+	content := ""
+
+	if addContent {
+		content = fmt.Sprintf("## Upcoming matches for %s", helpers.GetRegion(match.Tournament))
+	} 
     message := map[string]interface{}{
-        "content": "# Here is the upcoming match:",
+        "content": content,
         "embeds":  []map[string]interface{}{embed},
     }
 

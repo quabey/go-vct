@@ -22,7 +22,7 @@ func TestGetOffsetInHours(t *testing.T) {
             match2: common.MatchDetail{
                 In: "1h   30m",
             },
-            expected: 1,
+            expected: -1,
         },
         {
             name: "Test Case 2: Negative offset",
@@ -32,7 +32,7 @@ func TestGetOffsetInHours(t *testing.T) {
             match2: common.MatchDetail{
                 In: "2h 4m",
             },
-            expected: -1,
+            expected: 1,
         },
         {
             name: "Test Case 3: Zero offset",

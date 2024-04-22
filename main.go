@@ -19,6 +19,9 @@ func init() {
 }
 
 func main() {
+	services.GetUpcoming()
+
+	return
 	fmt.Println("Starting...")
 
 	messages, err := database.GetSentMessages()

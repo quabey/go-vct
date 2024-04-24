@@ -163,7 +163,7 @@ func SendMatchStartToServices(match common.MatchDetail, firstMatch bool) {
 			followingTimestamp, _ := helpers.ParseDurationFromNow(followingMatch.In)
 			fields = append(fields, common.EmbedField{
 				Name:  "Following Match",
-				Value: fmt.Sprintf("**%s** vs **%s** - at <t:%d:>", followingMatch.Teams[0].Name, followingMatch.Teams[1].Name, followingTimestamp),
+				Value: fmt.Sprintf("**%s** vs **%s** - at <t:%d:t>", followingMatch.Teams[0].Name, followingMatch.Teams[1].Name, followingTimestamp),
 			})
 		}
 		embed.Fields = fields

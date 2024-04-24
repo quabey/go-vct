@@ -40,7 +40,7 @@ func GetUpcoming() {
 var followingMatch common.MatchDetail
 
 func CheckGameStarts(currentUpcoming common.MatchDetail) {
-	if currentUpcoming.In != "" && !helpers.CheckIfMessageBeenSent(currentUpcoming.ID, "start") {
+	if currentUpcoming.In == "" && !helpers.CheckIfMessageBeenSent(currentUpcoming.ID, "start") {
 		fmt.Println("Match is starting!")
 		isFirst := helpers.GetHoursFromNow(followingMatch.In) <= 3
 		SendMatchStartToServices(currentUpcoming, isFirst)

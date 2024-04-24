@@ -19,10 +19,6 @@ func init() {
 }
 
 func main() {
-	services.GetUpcoming()
-	services.CheckAndSendResults()
-
-	return
 	fmt.Println("Starting...")
 
 	for _, message := range common.Messages {

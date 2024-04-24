@@ -55,7 +55,6 @@ func CheckAndSendResults() {
 		if !helpers.CheckIfMessageBeenSent(match.ID, "result") && helpers.CheckVCT(match.Tournament) {
 			fmt.Println("New result found!")
 			SendResultsToservices(match)
-			return
 		}
 		if index > 3 {
 			return

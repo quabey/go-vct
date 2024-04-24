@@ -35,13 +35,14 @@ func InitDB(databasePath string) {
 
 		sqlStmt := `
 		CREATE TABLE messages (
-			id integer not null primary key,
-    	    match_id integer not null constraint messages_pkunique,
+    		id integer not null primary key,
+    		match_id integer not null,
     		message_id        integer default 0,
     		announcement_sent integer default 0,
     		starting_sent     integer default 0,
     		result_sent       integer default 0,
-    		timestamp         integer default 0
+    		timestamp         integer default 0,
+    		UNIQUE(match_id)  
 		);
 		`
 		_, err = db.Exec(sqlStmt)

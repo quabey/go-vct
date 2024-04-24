@@ -8,53 +8,57 @@ import (
 	"net/http"
 )
 
-var (
-	runningMatchId      string
-	lastResultId        string
-	lastUpcomingMatchId string
-)
-
 func GetUpcoming() {
 	fmt.Println("Fetching upcoming matches...")
 	data := FetchData("https://vlr.orlandomm.net/api/v1/matches")
-	filter := []common.MatchDetail{}
+	filter := make(map[string][]common.MatchDetail)
 	for _, match := range data.Data {
 		if helpers.CheckVCT(match.Tournament) {
-			filter = append(filter, match)
+			region := helpers.GetRegion(match.Tournament)
+			if len(filter[region]) < 3 {
+				filter[region] = append(filter[region], match)
+			}
 		}
 	}
-	data.Data = filter
-	UpdateUpcomingMatches(data)
-	CheckGameStarts(data)
-}
 
-func UpdateUpcomingMatches(currentUpcoming common.MatchData) {
-	if currentUpcoming.Data[0].ID != lastUpcomingMatchId {
-		fmt.Println("New upcoming match found!")
-		lastUpcomingMatchId = currentUpcoming.Data[0].ID
-		SendUpcomingToservices(currentUpcoming)
-		return
+	for _, region := range filter {
+		fmt.Printf("Message been sent for %s ?: %t", region[0].ID, helpers.CheckIfMessageBeenSent(region[0].ID, "upcoming"))
+		if len(region) > 0 && region[0].In != "" && helpers.GetHoursFromNow(region[0].In) < 10 && !helpers.CheckIfMessageBeenSent(region[0].ID, "upcoming") {
+			SendUpcomingToServices(region[0], false, true)
+			if len(region) >= 2 && helpers.GetOffsetInHours(region[0], region[1]) <= 3 {
+				SendUpcomingToServices(region[1], false, false)
+				if len(region) >= 3 && helpers.GetOffsetInHours(region[1], region[2]) <= 3 {
+					SendUpcomingToServices(region[2], false, false)
+				}
+			}
+		}
+		followingMatch = region[1]
+		CheckGameStarts(region[0])
 	}
-	fmt.Println("No new upcoming matches found.")
 }
 
-func CheckGameStarts(currentUpcoming common.MatchData) {
-	if currentUpcoming.Data[0].ID != runningMatchId && currentUpcoming.Data[0].In == "" {
+var followingMatch common.MatchDetail
+
+func CheckGameStarts(currentUpcoming common.MatchDetail) {
+	if currentUpcoming.In == "" && !helpers.CheckIfMessageBeenSent(currentUpcoming.ID, "start") {
 		fmt.Println("Match is starting!")
-		runningMatchId = currentUpcoming.Data[0].ID
-		SendMatchStartToservices(currentUpcoming.Data[0])
+		isFirst := helpers.GetHoursFromNow(followingMatch.In) <= 3
+		SendMatchStartToServices(currentUpcoming, isFirst)
 		return
 	}
-	fmt.Println("No new match has started.")
+	fmt.Printf("No new match has started in %s", helpers.GetRegion(currentUpcoming.Tournament))
 }
 
 func CheckAndSendResults() {
 	results := FetchData("https://vlr.orlandomm.net/api/v1/results?page=1")
-	if results.Data[0].ID != lastResultId && helpers.CheckVCT(results.Data[0].Tournament) {
-		fmt.Println("New result found!")
-		lastResultId = results.Data[0].ID
-		SendResultsToservices(results)
-		return
+	for index, match := range results.Data {
+		if !helpers.CheckIfMessageBeenSent(match.ID, "result") && helpers.CheckVCT(match.Tournament) {
+			fmt.Println("New result found!")
+			SendResultsToservices(match)
+		}
+		if index > 3 {
+			return
+		}
 	}
 	fmt.Println("No new results found.")
 }

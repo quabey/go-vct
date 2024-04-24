@@ -35,12 +35,14 @@ func InitDB(databasePath string) {
 
 		sqlStmt := `
 		CREATE TABLE messages (
-			id INTEGER NOT NULL PRIMARY KEY, 
-			message_id TEXT, 
-			match_id TEXT, 
-			announcement_sent BOOLEAN, 
-			starting_sent BOOLEAN, 
-			result_sent BOOLEAN
+    		id integer not null primary key,
+    		match_id integer not null,
+    		message_id        integer default 0,
+    		announcement_sent integer default 0,
+    		starting_sent     integer default 0,
+    		result_sent       integer default 0,
+    		timestamp         integer default 0,
+    		UNIQUE(match_id)  
 		);
 		`
 		_, err = db.Exec(sqlStmt)
@@ -54,6 +56,7 @@ func InitDB(databasePath string) {
 }
 
 func GetSentMessages() ([]common.Message, error) {
+	fmt.Println("Getting sent messages...")
 	db, err := sql.Open("sqlite3", common.DbPath)
 	if err != nil {
 		log.Fatal(err)
@@ -73,7 +76,7 @@ func GetSentMessages() ([]common.Message, error) {
 	for rows.Next() {
 		var message common.Message
 
-		err = rows.Scan(&message.Id, &message.MessageId, &message.MatchId, &message.AnnouncementSent, &message.StartingSent, &message.ResultSent)
+		err = rows.Scan(&message.Id, &message.MatchId, &message.MessageId, &message.AnnouncementSent, &message.StartingSent, &message.ResultSent, &message.Timestamp)
 		if err != nil {
 			log.Fatal(err)
 			return nil, err
@@ -89,7 +92,7 @@ func GetSentMessages() ([]common.Message, error) {
 	return messages, nil
 }
 
-func AddSentMessage(matchId int, messageId int) error {
+func AddSentMessage(matchId int, messageId int, timestamp int) error {
 	db, err := sql.Open("sqlite3", common.DbPath)
 	if err != nil {
 		log.Fatal(err)
@@ -97,17 +100,19 @@ func AddSentMessage(matchId int, messageId int) error {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("INSERT INTO messages (match_id, message_id, announcement_sent, starting_sent, result_sent) VALUES (?, ?, ?, ?, ?)",
-		matchId, messageId, true, false, false)
+	_, err = db.Exec("INSERT INTO messages (match_id, message_id, announcement_sent, starting_sent, result_sent, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
+		matchId, messageId, true, false, false, timestamp)
 	if err != nil {
 		log.Fatal(err)
 		return err
 	}
 
+	common.Messages, _ = GetSentMessages()
 	return nil
 }
 
-func UpdateSentMessage(messageId int, field string) error {
+func UpdateSentMessage(matchId string, field string) error {
+	fmt.Println("Updating sent message")
 	db, err := sql.Open("sqlite3", common.DbPath)
 	if err != nil {
 		log.Fatal(err)
@@ -115,11 +120,21 @@ func UpdateSentMessage(messageId int, field string) error {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(fmt.Sprintf("UPDATE messages SET %s = ? WHERE message_id = ?", field), true, messageId)
-	if err != nil {
-		log.Fatal(err)
-		return err
+	if field == "starting_sent" {
+		_, err = db.Exec("INSERT INTO messages (match_id, starting_sent) VALUES(?, true) ON CONFLICT(match_id) DO UPDATE SET starting_sent = true", matchId)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+	} else if field == "result_sent" {
+		_, err = db.Exec("INSERT INTO messages (match_id, result_sent) VALUES(?, true) ON CONFLICT(match_id) DO UPDATE SET result_sent = true", matchId)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
 	}
 
+	common.Messages, _ = GetSentMessages()
+	fmt.Println("=======================================")
 	return nil
 }
